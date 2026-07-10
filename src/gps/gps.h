@@ -1,30 +1,19 @@
 #ifndef GPS_H
 #define GPS_H
 
+#include <stdint.h>
+
 struct Location {
     float latitude;
     float longitude;
+    float altitude;
     float speed;
-    int heading;
+    float hdop;
+    int satellites;
     unsigned long timestamp;
 };
 
-class GPS {
-public:
-    virtual ~GPS() {}
-    virtual void begin() = 0;
-    virtual Location getLocation() = 0;
-};
-
-class GPSMock : public GPS {
-private:
-    Location currentLocation;
-    unsigned long lastUpdate;
-
-public:
-    GPSMock();
-    void begin() override;
-    Location getLocation() override;
-};
+void gps_begin();
+bool gps_read(Location* loc);
 
 #endif // GPS_H

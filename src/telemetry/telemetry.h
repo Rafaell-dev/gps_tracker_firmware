@@ -4,9 +4,20 @@
 #include "../gps/gps.h"
 #include <Arduino.h>
 
-class Telemetry {
-public:
-    static String generatePayload(const String& deviceId, const Location& loc, int batteryMv, int rssi);
+struct Telemetry {
+    String deviceId;
+    unsigned long timestamp;
+    float latitude;
+    float longitude;
+    float altitude;
+    float speed;
+    int satellites;
+    float hdop;
+    float temperature;
+    int battery_mv;
 };
 
-#endif // TELEMETRY_H
+void telemetry_create(Telemetry* telemetry, const Location* loc);
+String telemetry_to_json(const Telemetry* telemetry);
+
+#endif
