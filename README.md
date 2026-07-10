@@ -1,70 +1,70 @@
-# Firmware Rastreador Veicular ESP32 (MVP)
+# Firmware Rastreador Veicular ESP32
 
-Este é o repositório inicial (MVP) do firmware de um rastreador veicular baseado no microcontrolador ESP32. 
+Este repositório contém o firmware de um rastreador veicular IoT baseado no microcontrolador ESP32. O sistema é capaz de realizar a leitura de dados de geolocalização e telemetria através de um módulo GPS físico e enviá-los de forma segura para uma API REST na nuvem.
 
-O projeto foi projetado com uma **arquitetura modular** focada em facilitar a substituição de dados simulados (mocks) por hardwares e serviços reais em etapas futuras, especificamente focado na integração com o módulo celular e GNSS **SIM7070G**.
+## 🚀 Funcionalidades Atuais
 
-## 🚀 Arquitetura Atual
+Nesta versão, o firmware realiza integração real de hardware e rede:
 
-Nesta versão inicial (MVP), como o hardware final e o servidor ainda não estão disponíveis, os componentes críticos são simulados:
-
-- **GPS Mock (`src/gps/`)**: Simula um módulo de GPS. Gera coordenadas (latitude e longitude) que incrementam progressivamente, além de valores de velocidade (0-100 km/h) e direção (0-360º) simulando um veículo em movimento contínuo.
-- **Telemetria (`src/telemetry/`)**: Responsável por receber os dados do GPS e formatá-los em um payload JSON padronizado para envio ao backend.
-- **Comunicação Mock (`src/communication/`)**: Simula a comunicação MQTT. Ao invés de conectar num broker real, o firmware imprime o payload JSON gerado na porta serial para fácil debug.
-- **Armazenamento Mock (`src/storage/`)**: Simula o armazenamento offline que será utilizado quando houver queda de sinal celular. Atualmente, apenas realiza logs em memória simulando sucesso, mas já prepara o terreno para uso de memórias NVS no ESP32.
-- **Máquina de Estados (`src/main.cpp`)**: Orquestra o ciclo do rastreador: 
-  `GPS_ACTIVE` ➔ `TRANSMIT` ➔ `SLEEP` (Aguardando o próximo ciclo).
+- **Integração de Hardware (GPS)**: Lê sentenças NMEA de um módulo GPS físico via porta Serial (UART) usando a biblioteca `TinyGPSPlus`. Coleta com precisão: latitude, longitude, altitude, velocidade, quantidade de satélites visíveis (HDOP) e timestamp exato (UTC/Epoch).
+- **Processamento de Telemetria**: Organiza os dados coletados em um payload `JSON` otimizado e padronizado utilizando `ArduinoJson`.
+- **Conectividade e Transmissão Segura**: Conecta-se à internet via **Wi-Fi** e realiza o envio da telemetria através de requisições **HTTP POST** para um endpoint remoto na nuvem. Suporta conexões **HTTPS/SSL** e autenticação via chave de API (`x-api-key`).
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Microcontrolador**: ESP32
 - **Framework**: Arduino (via PlatformIO)
 - **Linguagem**: C++
-- **Gerenciamento de JSON**: [ArduinoJson](https://arduinojson.org/)
+- **Bibliotecas Principais**:
+  - [ArduinoJson](https://arduinojson.org/) (Serialização de payloads)
+  - [TinyGPSPlus](https://github.com/mikalhart/TinyGPSPlus) (Decodificação NMEA)
+  - `WiFi`, `HTTPClient`, `WiFiClientSecure` (Comunicação de rede)
 
 ## 📦 Estrutura do Projeto
 
 ```text
 src/
-├── main.cpp                  # Orquestração e máquina de estados
+├── main.cpp                  # Máquina de estados e orquestração do ciclo principal
 ├── config/
-│   └── config.h              # Configurações globais, pins e IDs
+│   └── config.h              # Configurações globais, pinos, credenciais e chaves
 ├── gps/
 │   ├── gps.h                 # Interface para o GPS
-│   └── gps_mock.cpp          # Implementação simulada de movimento
-├── telemetry/
-│   ├── telemetry.h           # Header do gerador de payload
-│   └── telemetry.cpp         # Implementação de payload JSON
-├── communication/
-│   ├── mqtt.h                # Interface para comunicação remota
-│   └── mqtt.cpp              # Simulação de envio via console
-└── storage/
-    ├── storage.h             # Interface para persistência offline
-    └── storage.cpp           # Simulação de gravação de eventos
+│   └── gps.cpp               # Integração real via HardwareSerial 2
+├── network/
+│   ├── api_client.h          # Interface de comunicação web
+│   └── api_client.cpp        # Conexão Wi-Fi e chamadas HTTP POST/HTTPS
+└── telemetry/
+    ├── telemetry.h           # Header do gerador de payload
+    └── telemetry.cpp         # Montagem do pacote de dados em formato JSON
 ```
 
-## ⚙️ Como Executar
+## ⚙️ A Máquina de Estados (Main Loop)
+
+O funcionamento do rastreador é coordenado em `main.cpp` em um loop contínuo e não-bloqueante:
+1. **Escuta Contínua**: Ouve a porta Serial do GPS aguardando novas coordenadas válidas.
+2. **Intervalo Controlado**: Respeita um intervalo predefinido (`MAIN_LOOP_INTERVAL_MS`) antes de efetuar o próximo envio.
+3. **Transmissão**: Quando o intervalo é atingido, o sistema gera o JSON de telemetria e o transmite via rede.
+
+## 🚀 Como Executar
 
 Este projeto utiliza o [PlatformIO](https://platformio.org/).
 
-1. Abra a pasta do projeto no VSCode com a extensão do PlatformIO instalada.
-2. Para compilar o projeto:
+1. Clone o repositório e abra a pasta do projeto no VSCode (com a extensão do PlatformIO instalada).
+2. Modifique os valores no arquivo `src/config/config.h` de acordo com a sua rede e credenciais (SSID, senha, API_URL, API_KEY).
+3. Para compilar o projeto:
    ```bash
    pio run
    ```
-3. Para fazer upload do código para a placa ESP32:
+4. Para fazer upload do código para a placa ESP32:
    ```bash
    pio run -t upload
    ```
-4. Para abrir o Monitor Serial e visualizar a simulação rodando e gerando os JSONs (115200 baud rate):
+5. Para abrir o Monitor Serial e visualizar os logs de execução (baud rate 115200):
    ```bash
    pio device monitor
    ```
 
-## 🛣️ Roadmap / Próximas Evoluções
+## 🛣️ Próximos Passos (Roadmap)
 
-- [ ] Adicionar conexão Wi-Fi provisória para testes reais em bancada.
-- [ ] Substituir o Mock MQTT por envio real de telemetria a um broker na nuvem via Wi-Fi.
-- [ ] Integrar leitura UART real do GPS físico (SIM7070G).
-- [ ] Implementar comunicação MQTT com suporte a TLS/SSL nativa via chip SIM7070G (Modem Celular LTE/GPRS).
-- [ ] Adicionar persistência usando a memória NVS do ESP32 para salvar payloads em caso de perda de conexão celular (Data Logger offline).
+- [ ] Substituir a comunicação atual Wi-Fi por um Módulo Celular LTE/GPRS (ex: SIM7070G) integrando MQTT com TLS/SSL nativo.
+- [ ] Implementar sistema de Data Logger persistente (utilizando a memória NVS do ESP32 ou SD Card) para armazenar eventos offline (áreas de sombra) e reenviá-los quando a conexão retornar.
