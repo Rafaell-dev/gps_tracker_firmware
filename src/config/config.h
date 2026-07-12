@@ -5,8 +5,8 @@
 #define DEVICE_ID "TRK0001"
 
 // Configurações de Wi-Fi
-#define WIFI_SSID "TPLINK-Rafael"
-#define WIFI_PASS "Rafael706"
+#define WIFI_SSID "moto_g54"
+#define WIFI_PASS "12345678"
 
 // Configurações da API
 #define API_URL "https://api-telemetria-602423258185.southamerica-east1.run.app/api/v1/telemetry/telemetry"

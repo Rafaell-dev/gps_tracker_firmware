@@ -55,3 +55,7 @@ bool gps_read(Location* loc) {
 
     return false;
 }
+
+uint32_t gps_chars_processed() {
+    return tinyGps.charsProcessed();
+}

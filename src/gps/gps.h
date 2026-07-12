@@ -15,5 +15,6 @@ struct Location {
 
 void gps_begin();
 bool gps_read(Location* loc);
+uint32_t gps_chars_processed();
 
 #endif // GPS_H

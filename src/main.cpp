@@ -5,6 +5,7 @@
 #include "network/api_client.h"
 
 unsigned long lastSendTime = 0;
+unsigned long lastGpsDebugTime = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -29,6 +30,15 @@ void loop() {
             telemetry_create(&telemetry, &location);
             
             api_send(&telemetry);
+        }
+    } else {
+        if (millis() - lastGpsDebugTime >= 5000) {
+            lastGpsDebugTime = millis();
+            if (gps_chars_processed() < 10) {
+                Serial.println("[GPS] Nenhum dado recebido do modulo. Verifique conexoes RX/TX!");
+            } else {
+                Serial.println("[GPS] Aguardando sinal de satelite...");
+            }
         }
     }
 }
